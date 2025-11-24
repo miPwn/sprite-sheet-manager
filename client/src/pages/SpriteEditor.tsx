@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useCallback } from 'react'
 import {
   Box,
   Card,
@@ -39,6 +39,7 @@ import {
   Upload as UploadIcon,
   Close as CloseIcon
 } from '@mui/icons-material'
+import { useDropzone } from 'react-dropzone'
 
 interface GeneratedSprite {
   id: string
@@ -144,8 +145,7 @@ const SpriteEditor: React.FC = () => {
     }
   }
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+  const processImageFile = useCallback((file: File) => {
     if (file) {
       setReferenceImage(file)
       setReferencePreview(URL.createObjectURL(file))
@@ -186,14 +186,6 @@ const SpriteEditor: React.FC = () => {
           
           if (result.style) {
             setInferredStyle(result.style)
-            setPrompt(prev => {
-              const lines = prev.split('\n')
-              const nonStyleLines = lines.filter(line => !line.startsWith('[STYLE]'))
-              const basePrompt = nonStyleLines.join('\n').trim()
-              return basePrompt 
-                ? `${basePrompt}\n\n[STYLE]\n${result.style}`
-                : `[STYLE]\n${result.style}`
-            })
           }
         })
         .catch(error => {
@@ -209,7 +201,30 @@ const SpriteEditor: React.FC = () => {
         })
       }, 100)
     }
+  }, [prompt])
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      processImageFile(file)
+    }
   }
+
+  const onImageDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles.length > 0) {
+      processImageFile(acceptedFiles[0])
+    }
+  }, [processImageFile])
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop: onImageDrop,
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp']
+    },
+    maxFiles: 1,
+    noClick: true,
+    noKeyboard: true
+  })
 
   const analyzeReferenceImage = async () => {
     if (!referenceImage) return
@@ -253,17 +268,6 @@ const SpriteEditor: React.FC = () => {
         if (result.style) {
           console.log('Style received:', result.style)
           setInferredStyle(result.style)
-          // Format the prompt nicely with the style
-          setPrompt(prev => {
-            const lines = prev.split('\n')
-            const nonStyleLines = lines.filter(line => !line.startsWith('[STYLE]'))
-            const basePrompt = nonStyleLines.join('\n').trim()
-            const newPrompt = basePrompt 
-              ? `${basePrompt}\n\n[STYLE]\n${result.style}`
-              : `[STYLE]\n${result.style}`
-            console.log('Updated prompt:', newPrompt)
-            return newPrompt
-          })
         } else {
           console.warn('No style in result')
         }
@@ -300,13 +304,17 @@ const SpriteEditor: React.FC = () => {
     
     try {
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 120000) // 2 minute timeout
+      const timeoutId = setTimeout(() => controller.abort(), 120000)
+
+      const combinedPrompt = inferredStyle
+        ? `${prompt.trim()}\n\n[STYLE]\n${inferredStyle}`
+        : prompt.trim()
 
       const response = await fetch('/api/sprites/generate-ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: prompt.trim(),
+          prompt: combinedPrompt,
           parameters,
           palette: useAutoPalette ? null : selectedPalette
         }),
@@ -469,67 +477,133 @@ const SpriteEditor: React.FC = () => {
                 </Typography>
                 
                 <Stack spacing={3}>
-                  <TextField
-                    label="Prompt"
-                    placeholder="e.g. '8 pixel art potions'"
-                    multiline
-                    rows={8}
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    fullWidth
-                    variant="outlined"
-                    sx={{
-                      '& .MuiInputBase-root': {
-                        paddingRight: '48px' // Space for AI button
-                      }
-                    }}
-                    InputProps={{
-                      endAdornment: (
-                        <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
-                          <Tooltip title="Enhance with AI">
-                            <IconButton
-                              size="small"
-                              onClick={handleEnhancePrompt}
-                              disabled={isEnhancingPrompt || !prompt.trim()}
-                              sx={{
-                                bgcolor: 'rgba(104, 151, 187, 0.1)',
-                                '&:hover': {
-                                  bgcolor: 'rgba(104, 151, 187, 0.2)'
-                                }
-                              }}
-                            >
-                              {isEnhancingPrompt ? (
-                                <LinearProgress sx={{ width: 18, height: 18 }} />
-                              ) : (
-                                <AIIcon sx={{ fontSize: 18, color: '#6897BB' }} />
-                              )}
-                            </IconButton>
-                          </Tooltip>
+                  <Box>
+                    <TextField
+                      label="Your Request"
+                      placeholder="e.g. '8 pixel art potions'"
+                      multiline
+                      rows={inferredStyle ? 4 : 8}
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      fullWidth
+                      variant="outlined"
+                      sx={{
+                        '& .MuiInputBase-root': {
+                          paddingRight: '48px'
+                        }
+                      }}
+                      InputProps={{
+                        endAdornment: (
+                          <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
+                            <Tooltip title="Enhance with AI">
+                              <IconButton
+                                size="small"
+                                onClick={handleEnhancePrompt}
+                                disabled={isEnhancingPrompt || !prompt.trim()}
+                                sx={{
+                                  bgcolor: `${theme.palette.primary.main}1a`,
+                                  '&:hover': {
+                                    bgcolor: `${theme.palette.primary.main}33`
+                                  }
+                                }}
+                              >
+                                {isEnhancingPrompt ? (
+                                  <LinearProgress color="primary" sx={{ width: 18, height: 18 }} />
+                                ) : (
+                                  <AIIcon sx={{ fontSize: 18, color: theme.palette.primary.main }} />
+                                )}
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        )
+                      }}
+                    />
+                    
+                    {inferredStyle && (
+                      <Fade in={Boolean(inferredStyle)}>
+                        <Box sx={{ mt: 2, position: 'relative' }}>
+                          <TextField
+                            label="Inferred Style (from image)"
+                            multiline
+                            rows={4}
+                            value={inferredStyle}
+                            onChange={(e) => setInferredStyle(e.target.value)}
+                            fullWidth
+                            variant="outlined"
+                            sx={{
+                              '& .MuiInputBase-root': {
+                                bgcolor: 'rgba(99, 102, 241, 0.05)',
+                                border: `1px solid ${theme.palette.primary.main}40`
+                              }
+                            }}
+                          />
+                          <IconButton
+                            size="small"
+                            onClick={() => setInferredStyle(null)}
+                            sx={{
+                              position: 'absolute',
+                              top: 8,
+                              right: 8,
+                              bgcolor: 'background.paper',
+                              border: `1px solid ${theme.palette.divider}`,
+                              color: 'text.secondary',
+                              '&:hover': {
+                                bgcolor: 'action.hover',
+                                color: 'text.primary'
+                              }
+                            }}
+                          >
+                            <CloseIcon fontSize="small" />
+                          </IconButton>
                         </Box>
-                      )
-                    }}
-                  />
+                      </Fade>
+                    )}
+                  </Box>
 
                   {/* Reference Image Section */}
                   <Box>
                     <Typography variant="subtitle2" gutterBottom>Reference Image</Typography>
                     {!referenceImage ? (
-                      <Button
-                        variant="outlined"
-                        component="label"
-                        fullWidth
-                        startIcon={<UploadIcon />}
-                        sx={{ borderStyle: 'dashed', height: 60 }}
+                      <Box
+                        {...getRootProps()}
+                        sx={{
+                          border: '2px dashed',
+                          borderColor: isDragActive ? 'primary.main' : 'divider',
+                          borderRadius: 1,
+                          backgroundColor: isDragActive ? 'action.hover' : 'transparent',
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            borderColor: 'primary.main',
+                            backgroundColor: 'action.hover'
+                          }
+                        }}
                       >
-                        Upload Image
-                        <input
-                          type="file"
-                          hidden
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          ref={fileInputRef}
-                        />
-                      </Button>
+                        <input {...getInputProps()} />
+                        <Button
+                          variant="outlined"
+                          component="label"
+                          fullWidth
+                          startIcon={<UploadIcon />}
+                          sx={{
+                            borderStyle: 'dashed',
+                            height: 60,
+                            border: 'none',
+                            '&:hover': {
+                              border: 'none',
+                              backgroundColor: 'transparent'
+                            }
+                          }}
+                        >
+                          {isDragActive ? 'Drop image here...' : 'Upload or Drag & Drop Image'}
+                          <input
+                            type="file"
+                            hidden
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            ref={fileInputRef}
+                          />
+                        </Button>
+                      </Box>
                     ) : (
                       <Box>
                         <Box sx={{ position: 'relative', mt: 1 }}>
@@ -553,10 +627,10 @@ const SpriteEditor: React.FC = () => {
                             bgcolor: 'rgba(0,0,0,0.6)',
                             p: 1,
                             borderRadius: 1,
-                            border: '1px solid rgba(104, 151, 187, 0.3)'
+                            border: `1px solid ${theme.palette.primary.main}40`
                           }}>
-                            <LinearProgress sx={{ mb: 0.5 }} />
-                            <Typography variant="caption" sx={{ color: '#6897BB', display: 'block', textAlign: 'center' }}>
+                            <LinearProgress color="primary" sx={{ mb: 0.5 }} />
+                            <Typography variant="caption" sx={{ color: theme.palette.primary.main, display: 'block', textAlign: 'center' }}>
                               Analyzing image...
                             </Typography>
                           </Box>
@@ -564,9 +638,21 @@ const SpriteEditor: React.FC = () => {
                       </Box>
                     )}
                     {inferredStyle && (
-                      <Alert severity="success" sx={{ mt: 1, py: 0 }}>
-                        <Typography variant="caption">Style inferred & added to prompt!</Typography>
-                      </Alert>
+                      <Box sx={{
+                        mt: 1,
+                        py: 1,
+                        px: 1.5,
+                        bgcolor: 'background.paper',
+                        border: `1px solid ${theme.palette.divider}`,
+                        borderRadius: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1
+                      }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                          Style inferred & added to prompt
+                        </Typography>
+                      </Box>
                     )}
                   </Box>
 
@@ -623,7 +709,7 @@ const SpriteEditor: React.FC = () => {
             {isGenerating && (
               <Fade in={isGenerating}>
                 <Box sx={{ width: '100%', mt: 4, textAlign: 'center' }}>
-                  <LinearProgress sx={{ mb: 2, height: 8, borderRadius: 4 }} />
+                  <LinearProgress color="primary" sx={{ mb: 2, height: 8, borderRadius: 4 }} />
                   <Typography variant="h6" color="primary" gutterBottom>
                     AI is crafting your sprites...
                   </Typography>
@@ -760,10 +846,10 @@ const SpriteEditor: React.FC = () => {
                                   borderRadius: 1,
                                   cursor: useAutoPalette ? 'default' : 'pointer',
                                   border: '1px solid rgba(255,255,255,0.1)',
-                                  '&:hover': useAutoPalette ? {} : { 
-                                    transform: 'scale(1.05)', 
+                                  '&:hover': useAutoPalette ? {} : {
+                                    transform: 'scale(1.05)',
                                     boxShadow: 2,
-                                    border: '2px solid #6897BB'
+                                    border: `2px solid ${theme.palette.primary.main}`
                                   },
                                   display: 'flex',
                                   alignItems: 'center',
@@ -855,22 +941,73 @@ const SpriteEditor: React.FC = () => {
                   )
                 )}
 
+                {isGeneratingPalette && (
+                  <Box sx={{
+                    mt: 2,
+                    py: 1.5,
+                    px: 2,
+                    bgcolor: 'background.paper',
+                    border: `1px solid ${theme.palette.divider}`,
+                    borderRadius: 1
+                  }}>
+                    <LinearProgress color="primary" sx={{ mb: 1 }} />
+                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', textAlign: 'center' }}>
+                      Generating palette...
+                    </Typography>
+                  </Box>
+                )}
+
                 {extractedPalettes.length > 0 && (
                   <Box sx={{ mt: 3 }}>
                     <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>HISTORY</Typography>
                     <Stack spacing={1} sx={{ mt: 1 }}>
                       {extractedPalettes.map((p, i) => (
-                        <Chip 
-                          key={i} 
-                          label={p.name || `Palette ${i+1}`} 
+                        <Box
+                          key={i}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            cursor: 'pointer',
+                            p: 0.5,
+                            borderRadius: 1,
+                            border: '1px solid',
+                            borderColor: selectedPalette === p && !useAutoPalette ? 'primary.main' : 'divider',
+                            bgcolor: selectedPalette === p && !useAutoPalette ? 'action.selected' : 'transparent',
+                            '&:hover': {
+                              bgcolor: 'action.hover'
+                            }
+                          }}
                           onClick={() => {
                             setSelectedPalette(p)
                             setUseAutoPalette(false)
                           }}
-                          variant={selectedPalette === p && !useAutoPalette ? 'filled' : 'outlined'}
-                          size="small"
-                          sx={{ justifyContent: 'flex-start' }}
-                        />
+                        >
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              flex: 1,
+                              color: 'text.secondary',
+                              pl: 1
+                            }}
+                          >
+                            {p.name || `Palette ${i+1}`}
+                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 0.25, pr: 0.5 }}>
+                            {p.colors.slice(0, 6).map((color, colorIdx) => (
+                              <Box
+                                key={colorIdx}
+                                sx={{
+                                  width: 12,
+                                  height: 12,
+                                  bgcolor: color.hex,
+                                  borderRadius: 0.5,
+                                  border: '1px solid rgba(255,255,255,0.1)'
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        </Box>
                       ))}
                     </Stack>
                   </Box>

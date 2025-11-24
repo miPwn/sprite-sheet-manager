@@ -26,6 +26,16 @@ Documents patterns, best practices, and standards shared across modes.
 2025-11-23 15:50:53 - Error Boundaries: Comprehensive error handling in UI and API layers
 2025-11-23 15:50:53 - Memory Management: Proper cleanup of temporary files and object URLs
 
+## UI/UX Patterns
+
+2025-11-24 20:56:00 - Darcula Color Scheme: All UI components must follow Material-UI's dark theme with proper usage of theme.palette colors. Never use hardcoded colors like bright greens (#4caf50) or pure blacks/whites. Always use theme-aware colors:
+  - Backgrounds: theme.palette.background.paper, theme.palette.background.default
+  - Text: theme.palette.text.primary, theme.palette.text.secondary
+  - Borders: theme.palette.divider
+  - Interactive elements: theme.palette.action.hover, theme.palette.action.selected
+  - Status colors: theme.palette.success.main, theme.palette.error.main, theme.palette.primary.main
+  - This ensures consistent dark mode appearance and proper theme responsiveness
+
 ## Operational Rules
 
 2025-11-23 17:36:00 - Application Execution: The user runs the application. Assistant should NOT execute commands to start/launch the app (e.g., npm run dev, npm start). The user manages application lifecycle independently.
