@@ -1,0 +1,59 @@
+{
+  "folders": [
+    {
+      "name": "Root",
+      "path": "."
+    },
+    {
+      "name": "Client",
+      "path": "./client"
+    },
+    {
+      "name": "Server", 
+      "path": "./server"
+    }
+  ],
+  "settings": {
+    "vitest.enable": true,
+    "vitest.commandLine": "npx vitest",
+    "vitest.workspaceConfig": "./client/vitest.config.ts",
+    "jest.enable": true,
+    "jest.jestCommandLine": "npm test --",
+    "jest.autoRun": "off",
+    "jest.showCoverageOnLoad": true,
+    "jest.workspaceFolder": "./server",
+    "testing.defaultGutterClickAction": "run",
+    "testing.gutterEnabled": true,
+    "testing.openTesting": "openOnTestStart",
+    "explorer.fileNesting.enabled": true,
+    "explorer.fileNesting.patterns": {
+      "*.ts": "${capture}.test.ts, ${capture}.spec.ts",
+      "*.tsx": "${capture}.test.tsx, ${capture}.spec.tsx",
+      "*.js": "${capture}.test.js, ${capture}.spec.js"
+    },
+    "testing.automaticallyOpenTestResults": "openOnTestStart"
+  },
+  "extensions": {
+    "recommendations": [
+      "vitest.explorer",
+      "ms-vscode.vscode-jest", 
+      "ZixuanChen.vitest-explorer",
+      "ms-vscode.test-adapter-converter",
+      "hbenl.vscode-test-explorer"
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Run All Tests",
+        "dependsOrder": "parallel",
+        "dependsOn": ["Frontend Tests", "Backend Tests"],
+        "group": {
+          "kind": "test",
+          "isDefault": true
+        }
+      }
+    ]
+  }
+}

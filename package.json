@@ -1,0 +1,27 @@
+{
+  "name": "sprite-sheet-manager",
+  "version": "1.0.0",
+  "description": "Modern React/Node.js sprite sheet management application with advanced color palette and layout optimization",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "install-deps": "npm install && cd server && npm install && cd ../client && npm install",
+    "start": "cd server && npm start"
+  },
+  "keywords": [
+    "sprite-sheet",
+    "image-processing",
+    "react",
+    "nodejs",
+    "material-ui",
+    "color-palette"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
