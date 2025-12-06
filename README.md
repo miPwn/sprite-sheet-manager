@@ -2,7 +2,7 @@
 
 A modern, professional sprite sheet management application built with React, Node.js, and Material-UI. Features advanced color palette extraction, intelligent layout optimization, and a sleek dark material design interface.
 
-## 🚀 Features
+## eatures
 
 ### Core Functionality
 
@@ -46,7 +46,7 @@ A modern, professional sprite sheet management application built with React, Nod
 - **Multer** for file upload handling
 - **Helmet** & **Compression** for security and performance
 
-## 📦 Installation
+## Installation
 
 ### Prerequisites
 
@@ -79,7 +79,7 @@ The application will be available at:
 - Frontend: <http://localhost:3000>
 - Backend API: <http://localhost:5000>
 
-## 🎯 Usage
+## Usage
 
 ### Creating a Sprite Sheet
 
@@ -115,7 +115,7 @@ The application will be available at:
    - Copy individual colors to clipboard
    - Save palette history for reuse
 
-## 🏗 Architecture
+## Architecture
 
 ### Project Structure
 
@@ -155,7 +155,7 @@ sprite-sheet-manager/
 - `POST /api/colors/generate-palette` - Generate custom color harmony
 - `GET /api/colors/harmonies` - Get available color harmony types
 
-## 🎨 Color Features
+## Color Features
 
 ### Supported Color Harmonies
 
@@ -172,7 +172,7 @@ sprite-sheet-manager/
 - **CSS**: CSS custom properties for direct web use
 - **Text**: Simple list of hex values
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -192,7 +192,7 @@ MAX_FILES=20
 - **TypeScript**: Configuration in `client/tsconfig.json`
 - **Backend**: Express configuration in `server/index.js`
 
-## 📝 Scripts
+## Scripts
 
 - `npm run dev` - Start both frontend and backend in development mode
 - `npm run client` - Start only the React development server
@@ -200,7 +200,7 @@ MAX_FILES=20
 - `npm run build` - Build the frontend for production
 - `npm run install-deps` - Install dependencies for all packages
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -208,11 +208,11 @@ MAX_FILES=20
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Material-UI team for the excellent React components
 - Sharp.js for high-performance image processing
